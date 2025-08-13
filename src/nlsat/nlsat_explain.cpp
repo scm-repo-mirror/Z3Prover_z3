@@ -1246,7 +1246,7 @@ namespace nlsat {
             
             polynomial_ref_vector samples(m_pm);
 
-            lewelwise_project(ps, max_x);
+            levelwise_project(ps, max_x, this->m_assignment);
             if (x < max_x)
                 cac_add_cell_lits(ps, x, samples);
 
