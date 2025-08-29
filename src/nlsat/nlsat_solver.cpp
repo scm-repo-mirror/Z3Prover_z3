@@ -2221,6 +2221,7 @@ namespace nlsat {
             
             // lazy clause is a valid clause
             TRACE(nlsat_mathematica, display_mathematica_lemma(tout, m_lazy_clause.size(), m_lazy_clause.data()););
+            std::cout << "early exit!!!\n";
             exit(0);
             if (m_dump_mathematica) {
 //                verbose_stream() << "lazy clause\n";
