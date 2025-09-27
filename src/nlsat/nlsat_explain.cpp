@@ -943,8 +943,7 @@ namespace nlsat {
             add_simple_assumption(k, p, lsign);
         }
 
-        void cac_add_cell_lits(polynomial_ref_vector & ps, var y, polynomial_ref_vector & res) {
-            res.reset();
+        void cac_add_cell_lits(polynomial_ref_vector & ps, var y) {
             SASSERT(sample().is_assigned(y));
             bool lower_inf = true;
             bool upper_inf = true;
@@ -986,7 +985,6 @@ namespace nlsat {
                         // add literal
                         // ! (y = root_i(p))
                         add_root_literal(atom::ROOT_EQ, y, i+1, p);
-                        res.push_back(p);
                         return;
                     }
                     else if (s < 0) {
@@ -1023,11 +1021,9 @@ namespace nlsat {
             }
 
             if (!lower_inf) {
-                res.push_back(p_lower);
                 add_root_literal(m_full_dimensional ? atom::ROOT_GE : atom::ROOT_GT, y, i_lower, p_lower);
             }
             if (!upper_inf) {
-                res.push_back(p_upper);
                 add_root_literal(m_full_dimensional ? atom::ROOT_LE : atom::ROOT_LT, y, i_upper, p_upper);
             }
         }
@@ -1206,13 +1202,12 @@ namespace nlsat {
             var x = m_todo.extract_max_polys(ps);
             // Remark: after vanishing coefficients are eliminated, ps may not contain max_x anymore
             
-            polynomial_ref_vector samples(m_pm);
             levelwise lws(m_solver, ps, max_x, sample(), m_pm, m_am);
             auto cell = lws.single_cell();
             TRACE(lws, for (unsigned i = 0; i < cell.size(); i++)  
                                  display(tout << "I[" << i << "]:", m_solver, cell[i]) << "\n";);
             if (x < max_x)
-                cac_add_cell_lits(ps, x, samples);
+                cac_add_cell_lits(ps, x);
 
             while (true) {
                 if (all_univ(ps, x) && m_todo.empty()) {
@@ -1228,7 +1223,7 @@ namespace nlsat {
                 if (m_todo.empty())
                     break;
                 x = m_todo.extract_max_polys(ps);
-                cac_add_cell_lits(ps, x, samples);
+                cac_add_cell_lits(ps, x);
             }
         }
 
