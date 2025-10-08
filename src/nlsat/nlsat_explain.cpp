@@ -189,16 +189,6 @@ namespace nlsat {
 
         
         /**
-           \brief Wrapper for factorization
-        */
-        void factor(polynomial_ref & p, polynomial_ref_vector & fs) {
-            // TODO: add params, caching
-            TRACE(nlsat_factor, tout << "factor\n" << p << "\n";);
-            fs.reset();
-            m_cache.factor(p.get(), fs);
-        }
-
-        /**
            \brief Wrapper for psc chain computation
         */
         void psc_chain(polynomial_ref & p, polynomial_ref & q, unsigned x, polynomial_ref_vector & result) {
@@ -257,7 +247,7 @@ namespace nlsat {
             // Then, I assert p_i1 * ... * p_im  != 0
             {
                 restore_factors _restore(m_factors, m_factors_save);
-                factor(p, m_factors);
+                factor(p, m_cache, m_factors);
                 unsigned num_factors = m_factors.size();
                 m_zero_fs.reset();
                 m_is_even.reset();
@@ -576,7 +566,7 @@ namespace nlsat {
                 return;
             if (m_factor) {
                 restore_factors _restore(m_factors, m_factors_save);
-                factor(p, m_factors);
+                factor(p, m_cache, m_factors);
                 TRACE(nlsat_explain, display(tout << "adding factors of\n", m_solver, p); tout << "\n" << m_factors << "\n";);
                 polynomial_ref f(m_pm);
                 for (unsigned i = 0; i < m_factors.size(); i++) {
@@ -667,7 +657,7 @@ namespace nlsat {
         // this function also explains the value 0, if met
         bool coeffs_are_zeroes(polynomial_ref &s) {
             restore_factors _restore(m_factors, m_factors_save);
-            factor(s, m_factors);
+            factor(s, m_cache, m_factors);
             unsigned num_factors = m_factors.size();
             m_zero_fs.reset();
             m_is_even.reset();
@@ -1179,8 +1169,8 @@ namespace nlsat {
             }
         }
 
-        bool levelwise_single_cell(polynomial_ref_vector & ps, var max_x) {
-            levelwise lws(m_solver, ps, max_x, sample(), m_pm, m_am);
+        bool levelwise_single_cell(polynomial_ref_vector & ps, var max_x, polynomial::cache & cache) {
+            levelwise lws(m_solver, ps, max_x, sample(), m_pm, m_am, cache);
             auto cell = lws.single_cell();
             if (lws.failed()) {
                 return false;
@@ -1216,9 +1206,6 @@ namespace nlsat {
          */
         void project_cdcac(polynomial_ref_vector & ps, var max_x) {
             TRACE(nlsat_explain, tout << "max_x:" << max_x << std::endl;);
-            if (max_x == 0) {
-                std::cout << "*";
-            }
             if (ps.empty()) {
                 TRACE(nlsat_explain, tout << "ps.empty\n";);
                 return;
@@ -1238,7 +1225,7 @@ namespace nlsat {
             var x = m_todo.extract_max_polys(ps);
 
             TRACE(nlsat_explain, tout << "m_solver.apply_levelwise():" << m_solver.apply_levelwise() << "\n";);
-            if (m_solver.apply_levelwise() && levelwise_single_cell(ps, max_x))
+            if (m_solver.apply_levelwise() && levelwise_single_cell(ps, max_x, m_cache))
                 return;
 
             polynomial_ref_vector samples(m_pm);
