@@ -3973,7 +3973,6 @@ namespace polynomial {
             gcd(c_u, v, r);
         }
 
-        // TODO: implement euclid algorithm when m_manager in Zp mode
         void euclid_gcd(polynomial const * u, polynomial const * v, polynomial_ref & r) {
             SASSERT(m().modular());
             CTRACE(mgcd, !is_univariate(u) || !is_univariate(v),
@@ -4004,8 +4003,19 @@ namespace polynomial {
                 r = mk_const(a);
                 return;
             }
-           // Maybe map it to univariate case
-            gcd_prs(u, v, max_var(u), r);
+            var x = max_var(u);
+            polynomial_ref u_ref(pm());
+            polynomial_ref v_ref(pm());
+            u_ref = const_cast<polynomial*>(u);
+            v_ref = const_cast<polynomial*>(v);
+            up_manager::scoped_numeral_vector coeff_u(upm().m());
+            up_manager::scoped_numeral_vector coeff_v(upm().m());
+            up_manager::scoped_numeral_vector coeff_g(upm().m());
+            upm().to_numeral_vector(u_ref, coeff_u);
+            upm().to_numeral_vector(v_ref, coeff_v);
+            upm().euclid_gcd(coeff_u.size(), coeff_u.data(), coeff_v.size(), coeff_v.data(), coeff_g);
+            r = to_polynomial(coeff_g.size(), coeff_g.data(), x);
+            flip_sign_if_lm_neg(r);
         }
 
         // Combine two different modular images using Chinese Remainder theorem
